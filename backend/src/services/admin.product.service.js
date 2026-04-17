@@ -1,4 +1,6 @@
 import { Product } from "../models/admin.product.js";
+import { UserProduct } from "../models/user.product.js";
+import user from "../models/usersModels.js";
 import { Op } from "sequelize";
 
 // Create a new product
@@ -87,6 +89,66 @@ export const deleteProductService = async (productId) => {
         return { message: "Product deleted successfully" };
     } catch (err) {
         console.error("Error deleting product:", err.message);
+        throw err;
+    }
+};
+
+export const getOrderedProductsService = async ({
+    status = 'PURCHASED',
+    page = 1,
+    limit = 10,
+    search = ''
+} = {}) => {
+    try {
+        const parsedLimit = Math.max(parseInt(limit) || 10, 1);
+        const parsedPage = Math.max(parseInt(page) || 1, 1);
+        const offset = (parsedPage - 1) * parsedLimit;
+        const normalizedStatus = status ? String(status).toUpperCase() : null;
+        const normalizedSearch = search?.trim();
+
+        const whereClause = {};
+        if (normalizedStatus) {
+            whereClause.status = normalizedStatus;
+        }
+
+        if (normalizedSearch) {
+            whereClause[Op.or] = [
+                { '$product.productName$': { [Op.like]: `%${normalizedSearch}%` } },
+                { '$buyer.username$': { [Op.like]: `%${normalizedSearch}%` } },
+                { '$buyer.email$': { [Op.like]: `%${normalizedSearch}%` } }
+            ];
+        }
+
+        const { count, rows } = await UserProduct.findAndCountAll({
+            where: whereClause,
+            include: [
+                {
+                    model: Product,
+                    as: 'product',
+                    attributes: ['id', 'productName', 'productPrice', 'productImage']
+                },
+                {
+                    model: user,
+                    as: 'buyer',
+                    attributes: ['id', 'username', 'email', 'contact', 'role']
+                }
+            ],
+            order: [['updatedAt', 'DESC']],
+            limit: parsedLimit,
+            offset,
+            distinct: true,
+            subQuery: false
+        });
+
+        return {
+            orders: rows,
+            total: count,
+            totalPages: Math.max(Math.ceil(count / parsedLimit), 1),
+            currentPage: parsedPage,
+            perPage: parsedLimit
+        };
+    } catch (err) {
+        console.error("Error getting ordered products:", err.message);
         throw err;
     }
 };

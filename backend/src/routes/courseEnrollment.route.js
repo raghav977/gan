@@ -5,7 +5,8 @@ import {
     getMyCoursesController,
     getEnrolledCourseDetail,
     updateProgress,
-    getLectureContent
+    getLectureContent,
+    verifyCoursePayment
 } from '../controllers/courseEnrollment.controller.js';
 import { authMiddleware } from '../middlewares/auth.js';
 
@@ -31,5 +32,13 @@ router.get('/course/:courseId/lecture/:lectureId', getLectureContent);
 
 // Update lecture progress (mark as complete)
 router.put('/course/:courseId/lecture/:lectureId/progress', updateProgress);
+
+
+// coursepayment
+
+router.put('/enroll/verify-payment',verifyCoursePayment)
+
+
+
 
 export default router;

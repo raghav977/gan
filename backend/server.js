@@ -27,7 +27,11 @@ import courseVideoRoutes from "./src/routes/course.lecture.video.route.js";
 import publicCourseRoutes from "./src/routes/public.course.route.js"
 
 import adminProductRoutes from "./src/routes/admin.product.route.js"
+import adminCourseRoutes from "./src/routes/admin.course.route.js"
 import publicProductRoutes from "./src/routes/public.product.route.js"
+import userProductRoutes from "./src/routes/user.product.route.js"
+import aiChatbotRoutes from "./src/routes/ai.chatbot.route.js"
+import notificationRoutes from "./src/routes/notification.route.js"
 
 import adminVerificationRoutes from "./src/routes/admin.trainer.verification.route.js"
 
@@ -38,12 +42,11 @@ import clientTrainerRoutes from './src/routes/clientTrainer.route.js'
 import courseEnrollmentRoutes from './src/routes/courseEnrollment.route.js'
 import { initializeSocket } from './src/socket/socket.js'
 
+dotenv.config();
 
 const PORT = process.env.PORT || 5001;
 
-
 const app = express();
-dotenv.config();
 cloudinaryConfig();
 
 
@@ -62,8 +65,6 @@ app.use(cors());
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
-
 // Test route
 app.get("/", (req, res) => {
   res.send(`Server is running on port ${PORT}`);
@@ -79,6 +80,7 @@ app.use("/api/public/courses",publicCourseRoutes)
 
 app.use("/api/admin",adminRoutes)
 app.use("/api/admin/products", adminProductRoutes)
+app.use("/api/admin/courses", adminCourseRoutes)
 app.use("/api/public/products", publicProductRoutes)
 
 app.use('/api/admin/trainer',adminVerificationRoutes)
@@ -86,12 +88,15 @@ app.use('/api/admin/trainer',adminVerificationRoutes)
 app.use('/api/public/trainer',publicApprovedTrainerRoutes);
 
 app.use('/api/chat', chatRoutes);
+app.use('/api', aiChatbotRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Client-Trainer management routes
 app.use('/api/client-trainer', clientTrainerRoutes);
 
 // Course enrollment routes (user enrolls in courses)
 app.use('/api/enrollment', courseEnrollmentRoutes);
+app.use('/api/user/products', userProductRoutes);
 
 
 

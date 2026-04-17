@@ -3,7 +3,8 @@ import {
     getAllProductsService,
     getProductByIdService,
     updateProductService,
-    deleteProductService
+    deleteProductService,
+    getOrderedProductsService
 } from "../services/admin.product.service.js";
 
 // Create a new product
@@ -153,6 +154,24 @@ export const deleteProductController = async (req, res) => {
         console.error("Error deleting product:", err.message);
         return res.status(500).json({
             message: err.message || "Failed to delete product"
+        });
+    }
+};
+
+export const getOrderedProductsController = async (req, res) => {
+    try {
+        const { page = 1, limit = 10, search = "", status = "PURCHASED" } = req.query;
+
+        const result = await getOrderedProductsService({ page, limit, search, status });
+
+        return res.status(200).json({
+            message: "Ordered products fetched successfully",
+            data: result
+        });
+    } catch (err) {
+        console.error("Error fetching ordered products:", err.message);
+        return res.status(500).json({
+            message: err.message || "Failed to fetch ordered products"
         });
     }
 };

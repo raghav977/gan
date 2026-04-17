@@ -6,6 +6,8 @@ import ProgressSubmission from "../models/progressSubmission.model.js";
 import user from "../models/usersModels.js";
 import Trainer from "../models/TrainerModels.js";
 import { Op } from "sequelize";
+import { createNotification } from "./notification.service.js";
+import { emitNotificationEvent } from "../socket/socket.js";
 
 // ==================== CLIENT ENROLLMENT ====================
 
@@ -102,7 +104,6 @@ export const getTrainerClientsService = async (trainerId) => {
         }],
         order: [['acceptedAt', 'DESC']]
     });
-    console.log("This is clients",clients.User)
 
     return clients;
 };
@@ -325,6 +326,27 @@ export const assignTodoToUsersService = async (todoId, trainerId, userIds) => {
             isNotified: false
         }));
         await UserTodoAssignment.bulkCreate(assignments);
+
+        const notifications = await Promise.all(
+            newUserIds.map((userId) =>
+                createNotification({
+                    userId,
+                    actorId: trainerId,
+                    type: "TODO",
+                    title: "New training task",
+                    body: `${todo.title} has been assigned to you`,
+                    metadata: {
+                        todoId,
+                        trainerId,
+                        dueDate: todo.dueDate
+                    }
+                })
+            )
+        );
+
+        notifications.forEach((notification, index) => {
+            emitNotificationEvent(newUserIds[index], notification);
+        });
     }
 
     return { 
@@ -620,8 +642,10 @@ export const getAllAssignmentsAdminService = async (options = {}) => {
         distinct: true
     });
 
+    const assignments = rows.map(a => a);
+
     return {
-        assignments: rows,
+        assignments,
         total: count,
         totalPages: Math.ceil(count / limit),
         currentPage: parseInt(page),

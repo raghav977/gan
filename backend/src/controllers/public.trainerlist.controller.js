@@ -1,4 +1,4 @@
-import { getApprovedTrainerListService } from "../services/public.trainerlist.js";
+import { getApprovedTrainerListService, getTrainerDetailService } from "../services/public.trainerlist.js";
 
 export const getApprovedTrainerListController = async(req,res)=>{
     try{
@@ -18,5 +18,27 @@ export const getApprovedTrainerListController = async(req,res)=>{
             detail:err.message
         })
 
+    }
+}
+
+export const getTrainerDetailController = async(req,res)=>{
+    try{
+        const { trainerId } = req.params;
+        
+        if(!trainerId){
+            return res.status(400).json({
+                message: "Trainer ID is required"
+            });
+        }
+
+        const result = await getTrainerDetailService(trainerId);
+        return res.status(200).json(result);
+    }
+    catch(err){
+        console.log("Something went wrong:",err);
+        return res.status(404).json({
+            message: err.message || "Something went wrong",
+            detail: err.message
+        });
     }
 }

@@ -53,3 +53,42 @@ export const getApprovedTrainerListService = async(limit=10,page=1,search="")=>{
 
     }
 }
+
+export const getTrainerDetailService = async(trainerId)=>{
+    try{
+        const trainer = await Trainer.findOne({
+            where: { id: trainerId, is_verified: true },
+            attributes: [
+                'id',
+                'specialization',
+                'type',
+                'latitude',
+                'longitude',
+                'radius',
+                'is_verified',
+                'userId',
+                [col('User.id'), 'userId'],
+                [col('User.username'), 'username'],
+                [col('User.email'), 'email'],
+                [col('User.contact'), 'contact']
+            ],
+            include: {
+                model: user,
+                attributes: []
+            }
+        });
+
+        if(!trainer){
+            throw new Error("Trainer not found or not verified");
+        }
+
+        return {
+            trainer,
+            success: true
+        };
+    }
+    catch(err){
+        console.log("Something went wrong",err);
+        throw err;
+    }
+}

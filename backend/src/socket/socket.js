@@ -2,11 +2,18 @@ import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { sendMessageService, markMessagesAsReadService } from "../services/chat.service.js";
+import { createNotification } from "../services/notification.service.js";
 
 dotenv.config();
 
-// Store online users: { oderId: socketId }
+// Store online users: { userId: socketId }
 const onlineUsers = new Map();
+let ioInstance = null;
+
+export const emitNotificationEvent = (userId, notification) => {
+    if (!ioInstance || !notification) return;
+    ioInstance.to(`user-${userId}`).emit("notification:new", notification);
+};
 
 export const initializeSocket = (server) => {
     const io = new Server(server, {
@@ -16,6 +23,8 @@ export const initializeSocket = (server) => {
             credentials: true
         }
     });
+
+    ioInstance = io;
 
     // Authentication middleware
     io.use((socket, next) => {
@@ -82,7 +91,21 @@ export const initializeSocket = (server) => {
                 // Emit to the conversation room
                 io.to(`conversation-${conversationId}`).emit("new-message", message);
 
-                // Also emit to receiver's personal room (for notifications)
+                // Persist notification for the receiver
+                const notification = await createNotification({
+                    userId: receiverId,
+                    actorId: userId,
+                    type: "MESSAGE",
+                    title: "New message",
+                    body: `${message?.sender?.username || "Someone"} sent you a message`,
+                    metadata: {
+                        conversationId,
+                        messageId: message.id
+                    }
+                });
+
+                // Emit socket notification + legacy message notification event
+                emitNotificationEvent(receiverId, notification);
                 io.to(`user-${receiverId}`).emit("message-notification", {
                     conversationId,
                     message
@@ -196,3 +219,4 @@ export const isUserOnline = (userId) => {
 export const getSocketId = (userId) => {
     return onlineUsers.get(userId);
 };
+

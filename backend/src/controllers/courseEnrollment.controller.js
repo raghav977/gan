@@ -1,3 +1,5 @@
+import CoursePayment from "../models/coursePayment.js";
+import axios from "axios"
 import {
     enrollInCourseService,
     checkCourseEnrollmentService,
@@ -6,6 +8,7 @@ import {
     updateLectureProgressService,
     getLectureContentService
 } from "../services/courseEnrollment.service.js";
+import CourseEnrollment from "../models/courseEnrollment.model.js";
 
 // Enroll in a course
 export const enrollInCourse = async (req, res) => {
@@ -144,3 +147,54 @@ export const getLectureContent = async (req, res) => {
         });
     }
 };
+
+
+
+// course enrollment verification
+
+export const verifyCoursePayment = async(req,res)=>{
+    try{
+        console.log("This si reqbody",req.body);
+        const {transaction_uuid} = req.body;
+        console.log("THis is data",transaction_uuid);
+
+
+
+        const productCode = transaction_uuid.product_code;
+        const totalAmount = parseFloat(transaction_uuid.total_amount);
+        const transaction_id = parseInt(transaction_uuid.transaction_uuid);
+        const payment = await CoursePayment.findOne({ where: { transaction_uuid: transaction_uuid.transaction_uuid } });
+        console.log("This is payment",payment);
+        if (!payment) return res.status(404).json({ message: "Payment not found" });
+        const response = await axios.get(`https://rc.esewa.com.np/api/epay/transaction/status/?product_code=${productCode}&total_amount=${totalAmount}&transaction_uuid=${transaction_id}`)
+
+        console.log("This is response",response);
+        payment.status='COMPLETED';
+        const courseEnrollment = await CourseEnrollment.findOne({
+            where: { courseId: payment.courseId, userId: req.user.id }
+        });
+        console.log("This is course enrollment",courseEnrollment);
+        console.log("THis is payment course id",payment.courseId);
+         console.log("This is payment user id",req.user.id);
+
+        if(courseEnrollment){
+            courseEnrollment.status = 'active';
+            await courseEnrollment.save();
+        }
+        await payment.save();
+        return res.status(200).json({
+            message: "Payment verified and course enrollment updated",
+            data: {
+                paymentStatus: payment.status,
+                enrollmentStatus: courseEnrollment ? courseEnrollment.status : 'not enrolled'
+            }
+        });
+
+    }
+    catch(err){
+        console.error("Payment verification error:", err.message);
+        return res.status(400).json({
+            message: err.message
+        });
+    }
+}

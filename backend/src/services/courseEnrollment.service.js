@@ -6,6 +6,7 @@ import Trainer from "../models/TrainerModels.js";
 import user from "../models/usersModels.js";
 import { Op } from "sequelize";
 import crypto from "crypto";
+import CoursePayment from "../models/coursePayment.js";
 
 // ==================== COURSE ENROLLMENT ====================
 
@@ -72,17 +73,28 @@ export const enrollInCourseService = async (userId, courseId) => {
 
     const firstLectureId = firstWeek?.materials?.[0]?.id || null;
 
+
+    const pendingPayment = await CoursePayment.create({
+        userId,
+        courseId,
+        transaction_uuid,
+        status:"PENDING",
+        amount:total_amount,
+    })
+
+    
    
 
-    // const enrollment = await CourseEnrollment.create({
-    //     userId,
-    //     courseId,
-    //     status: 'active',
-    //     progress: 0,
-    //     currentLectureId: firstLectureId,
-    //     completedLectures: [],
-    //     enrolledAt: new Date()
-    // });
+    const enrollment = await CourseEnrollment.create({
+        userId,
+        courseId,
+        status: 'cancelled', // Start as cancelled until payment is verified
+        progress: 0,
+        currentLectureId: firstLectureId,
+        completedLectures: [],
+        enrolledAt: new Date()
+    });
+
      const data = {
         amount,
         tax_amount,
@@ -92,7 +104,7 @@ export const enrollInCourseService = async (userId, courseId) => {
         signature,
         signed_field_names: "total_amount,transaction_uuid,product_code",
         success_url: "http://localhost:5173/course/payment/success",
-        failure_url: "http://localhost:5173/course/payment/failure"
+        failure_url: "http://localhost:5173/course/payment/failure",
     };
     return data;
 };

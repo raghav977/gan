@@ -1,10 +1,11 @@
 import express from "express";
-import { getApprovedTrainerListController } from "../controllers/public.trainerlist.controller.js";
+import { getApprovedTrainerListController, getTrainerDetailController } from "../controllers/public.trainerlist.controller.js";
 
 
 const router = express.Router();
 
 
-router.get("/approvedTrainer",getApprovedTrainerListController );
+router.get("/approvedTrainer", getApprovedTrainerListController);
+router.get("/detail/:trainerId", getTrainerDetailController);
 
 export default router;

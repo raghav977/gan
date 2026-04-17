@@ -22,6 +22,10 @@ import ProgressSubmission from "../models/progressSubmission.model.js";
 
 // Import Course Enrollment model
 import CourseEnrollment from "../models/courseEnrollment.model.js";
+import CoursePayment from "../models/coursePayment.js";
+import { UserProduct } from "../models/user.product.js";
+import { UserProductPayment } from "../models/userproduct.payment.model.js";
+import Notification from "../models/notification.model.js";
 
 // Define associations
 user.hasOne(Trainer, { foreignKey: 'userId', onDelete: 'CASCADE' });
@@ -64,8 +68,9 @@ Trainer.hasMany(ClientEnrollment, { foreignKey: 'trainerId', as: 'clientEnrollme
 ClientEnrollment.belongsTo(Trainer, { foreignKey: 'trainerId', as: 'trainer' });
 
 // Trainer <-> Todo (Trainer creates todos)
-Trainer.hasMany(Todo, { foreignKey: 'trainerId', as: 'todos' });
-Todo.belongsTo(Trainer, { foreignKey: 'trainerId', as: 'trainer' });
+// Note: trainerId is actually a userId (user with role='trainer')
+user.hasMany(Todo, { foreignKey: 'trainerId', as: 'createdTodos' });
+Todo.belongsTo(user, { foreignKey: 'trainerId', as: 'trainer' });
 
 // Todo <-> TodoResource (Todo has resources)
 Todo.hasMany(TodoResource, { foreignKey: 'todoId', as: 'resources', onDelete: 'CASCADE' });
@@ -93,15 +98,111 @@ ProgressSubmission.belongsTo(user, { foreignKey: 'userId', as: 'user' });
 user.hasMany(CourseEnrollment, { foreignKey: 'userId', as: 'courseEnrollments' });
 CourseEnrollment.belongsTo(user, { foreignKey: 'userId', as: 'user' });
 
+
+
+
 // TrainerCourse <-> CourseEnrollment (Course has enrolled users)
 TrainerCourse.hasMany(CourseEnrollment, { foreignKey: 'courseId', as: 'enrollments' });
 CourseEnrollment.belongsTo(TrainerCourse, { foreignKey: 'courseId', as: 'course' });
+
+
+// courses and payment, user and payment
+user.hasMany(CoursePayment,{
+    foreignKey:'userId',
+    onDelete:"CASCADE"
+})
+
+CoursePayment.belongsTo(user, {
+  foreignKey: 'userId'
+});
+
+TrainerCourse.hasMany(CoursePayment, {
+  foreignKey: 'courseId'
+});
+
+CoursePayment.belongsTo(TrainerCourse, {
+  foreignKey: 'courseId'
+});
+
+
+
 
 // CourseMaterial <-> CourseEnrollment (Current lecture reference)
 CourseMaterial.hasMany(CourseEnrollment, { foreignKey: 'currentLectureId', as: 'currentEnrollments' });
 CourseEnrollment.belongsTo(CourseMaterial, { foreignKey: 'currentLectureId', as: 'currentLecture' });
 
+
+// product and user association
+user.hasMany(UserProduct,{
+    foreignKey:'userId',
+    onDelete:"CASCADE",
+    as:'purchases'
+})
+
+UserProduct.belongsTo(user,{
+    foreignKey:'userId',
+    as:'buyer'
+})
+
+Product.hasMany(UserProduct,{
+    foreignKey:'productId',
+    as: 'userProducts'
+})
+
+UserProduct.belongsTo(Product,{
+    foreignKey:'productId',
+    as: 'product'
+})
+
+
+
+// User <-> UserProductPayment (User makes payments for products)
+
+user.hasMany(UserProductPayment,{
+    foreignKey:'userId',
+    onDelete:"CASCADE"
+})
 // Sync database
+UserProductPayment.belongsTo(user,{
+    foreignKey:'userId'
+})
+
+Product.hasMany(UserProductPayment,{
+    foreignKey:'productId',
+    as: 'productPayments'
+})
+
+UserProductPayment.belongsTo(Product,{
+    foreignKey:'productId',
+    as: 'product'
+})
+
+UserProduct.hasMany(UserProductPayment, {
+    foreignKey: 'userProductId',
+    as: 'payments'
+});
+
+UserProductPayment.belongsTo(UserProduct, {
+    foreignKey: 'userProductId',
+    as: 'cartItem'
+});
+
+// Notifications
+user.hasMany(Notification, {
+    foreignKey: 'userId',
+    as: 'notifications',
+    onDelete: 'CASCADE'
+});
+
+Notification.belongsTo(user, {
+    foreignKey: 'userId',
+    as: 'recipient'
+});
+
+Notification.belongsTo(user, {
+    foreignKey: 'actorId',
+    as: 'actor'
+});
 
 const syncDatabase = async()=>{
     try{
