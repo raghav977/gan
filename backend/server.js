@@ -32,6 +32,7 @@ import publicProductRoutes from "./src/routes/public.product.route.js"
 import userProductRoutes from "./src/routes/user.product.route.js"
 import aiChatbotRoutes from "./src/routes/ai.chatbot.route.js"
 import notificationRoutes from "./src/routes/notification.route.js"
+import otpRoutes from "./src/routes/otp.route.js"
 
 import adminVerificationRoutes from "./src/routes/admin.trainer.verification.route.js"
 
@@ -90,6 +91,7 @@ app.use('/api/public/trainer',publicApprovedTrainerRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api', aiChatbotRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/auth', otpRoutes);
 
 // Client-Trainer management routes
 app.use('/api/client-trainer', clientTrainerRoutes);
