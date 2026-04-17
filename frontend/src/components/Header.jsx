@@ -22,8 +22,9 @@ const Header = () => {
   const navBarItems = [
     { name: "Home", link: "/" },
     { name: "Courses", link: "/courses" },
-    { name: "Product", link: "/product" },
+    { name: "Product", link: "/products" },
     { name: "About Us", link: "/about" },
+    {name:"Trainers", link:"/trainers"}
   ];
 
   return (

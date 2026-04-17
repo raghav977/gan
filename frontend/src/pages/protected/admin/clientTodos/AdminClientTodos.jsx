@@ -13,6 +13,7 @@ export default function AdminClientTodos() {
     const [assignments, setAssignments] = useState([]);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [searchInput, setSearchInput] = useState("");
     const [pagination, setPagination] = useState({
         page: 1,
         limit: 10,
@@ -27,13 +28,10 @@ export default function AdminClientTodos() {
     });
     const [showFilters, setShowFilters] = useState(false);
 
-    useEffect(() => {
-        fetchStats();
-    }, []);
-
-    useEffect(() => {
-        fetchAssignments();
-    }, [pagination.page, pagination.limit]);
+    const updateFilterField = (field, value) => {
+        setPagination(prev => ({ ...prev, page: 1 }));
+        setFilters(prev => ({ ...prev, [field]: value }));
+    };
 
     const fetchStats = async () => {
         try {
@@ -44,37 +42,55 @@ export default function AdminClientTodos() {
         }
     };
 
-    const fetchAssignments = async () => {
-        setLoading(true);
-        try {
-            const params = {
-                page: pagination.page,
-                limit: pagination.limit,
-                ...filters
-            };
-            
-            // Remove empty filters
-            Object.keys(params).forEach(key => {
-                if (!params[key]) delete params[key];
-            });
+    useEffect(() => {
+        fetchStats();
+    }, []);
 
-            const res = await getAllAssignmentsAdmin(params);
-            setAssignments(res.data.assignments || []);
-            setPagination(prev => ({
-                ...prev,
-                total: res.data.total,
-                totalPages: res.data.totalPages
-            }));
-        } catch (err) {
-            console.error("Error fetching assignments:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadAssignments = async () => {
+            setLoading(true);
+            try {
+                const params = {
+                    page: pagination.page,
+                    limit: pagination.limit
+                };
+
+                if (filters.search) params.search = filters.search;
+                if (filters.status) params.status = filters.status;
+                if (filters.fromDate) params.fromDate = filters.fromDate;
+                if (filters.toDate) params.toDate = filters.toDate;
+
+                const res = await getAllAssignmentsAdmin(params);
+                const data = res.data || {};
+
+                if (!isMounted) return;
+
+                setAssignments(data.assignments || []);
+                setPagination(prev => ({
+                    ...prev,
+                    total: data.total || 0,
+                    totalPages: data.totalPages || 0
+                }));
+            } catch (err) {
+                console.error("Error fetching assignments:", err);
+            } finally {
+                if (isMounted) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        loadAssignments();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [filters.fromDate, filters.search, filters.status, filters.toDate, pagination.limit, pagination.page]);
 
     const handleSearch = () => {
-        setPagination(prev => ({ ...prev, page: 1 }));
-        fetchAssignments();
+        updateFilterField("search", searchInput.trim());
     };
 
     const handleReset = () => {
@@ -85,7 +101,7 @@ export default function AdminClientTodos() {
             toDate: ""
         });
         setPagination(prev => ({ ...prev, page: 1 }));
-        setTimeout(() => fetchAssignments(), 100);
+        setSearchInput("");
     };
 
     const getStatusColor = (status) => {
@@ -138,8 +154,8 @@ export default function AdminClientTodos() {
                             <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                             <input
                                 type="text"
-                                value={filters.search}
-                                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                                value={searchInput}
+                                onChange={(e) => setSearchInput(e.target.value)}
                                 placeholder="Search by title, user, or trainer..."
                                 className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
                                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -149,7 +165,7 @@ export default function AdminClientTodos() {
                         {/* Status Filter */}
                         <select
                             value={filters.status}
-                            onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                            onChange={(e) => updateFilterField("status", e.target.value)}
                             className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
                         >
                             <option value="">All Status</option>
@@ -187,7 +203,7 @@ export default function AdminClientTodos() {
                                     <input
                                         type="date"
                                         value={filters.fromDate}
-                                        onChange={(e) => setFilters(prev => ({ ...prev, fromDate: e.target.value }))}
+                                        onChange={(e) => updateFilterField("fromDate", e.target.value)}
                                         className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
                                     />
                                 </div>
@@ -198,7 +214,7 @@ export default function AdminClientTodos() {
                                     <input
                                         type="date"
                                         value={filters.toDate}
-                                        onChange={(e) => setFilters(prev => ({ ...prev, toDate: e.target.value }))}
+                                        onChange={(e) => updateFilterField("toDate", e.target.value)}
                                         className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
                                     />
                                 </div>
@@ -240,7 +256,11 @@ export default function AdminClientTodos() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
-                                {assignments.map((assignment) => (
+                                {assignments.map((assignment) => {
+                                    const trainerProfile = assignment.todo?.trainer;
+                                    const trainerUser = trainerProfile?.User || trainerProfile?.user || trainerProfile;
+
+                                    return (
                                     <tr key={assignment.id} className="hover:bg-gray-50">
                                         <td className="px-4 py-3">
                                             <p className="font-medium">{assignment.todo?.title}</p>
@@ -259,7 +279,10 @@ export default function AdminClientTodos() {
                                             <p className="text-sm text-gray-500">{assignment.user?.email}</p>
                                         </td>
                                         <td className="px-4 py-3">
-                                            <p>{assignment.todo?.trainer?.username}</p>
+                                            <p className="font-medium">{trainerUser?.username || 'Unknown Trainer'}</p>
+                                            {trainerUser?.email && (
+                                                <p className="text-sm text-gray-500">{trainerUser.email}</p>
+                                            )}
                                         </td>
                                         <td className="px-4 py-3">
                                             <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(assignment.status)}`}>
@@ -275,7 +298,7 @@ export default function AdminClientTodos() {
                                             </span>
                                         </td>
                                     </tr>
-                                ))}
+                                )})}
                             </tbody>
                         </table>
                     </div>

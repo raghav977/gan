@@ -1,12 +1,15 @@
 import React from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { MdDashboard, MdAssignment, MdMessage, MdSettings, MdLogout, MdPerson, MdPlayCircle } from 'react-icons/md'
+import { MdDashboard, MdAssignment, MdMessage, MdSettings, MdLogout, MdPerson, MdPlayCircle, MdShoppingCart } from 'react-icons/md'
+
+
 import Header from '../../../components/Header'
 
 const Page = () => {
     const menuItems = [
         { name: "Dashboard", link: "/user/dashboard", icon: MdDashboard },
         { name: "My Courses", link: "/user/my-courses", icon: MdPlayCircle },
+    { name: "My Products", link: "/user/my-products", icon: MdShoppingCart },
         { name: "My Trainers", link: "/user/trainers", icon: MdPerson },
         { name: "My Tasks", link: "/user/todos", icon: MdAssignment },
         { name: "Messages", link: "/user/messages", icon: MdMessage },
@@ -16,7 +19,7 @@ const Page = () => {
 
     return (
         <div className="min-h-screen bg-gray-100">
-            <Header />
+            {/* <Header /> */}
             <div className="flex">
                 {/* SIDEBAR */}
                 <aside className="w-64 min-h-[calc(100vh-64px)] bg-white border-r border-gray-200 shadow-sm">

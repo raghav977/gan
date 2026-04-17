@@ -1,6 +1,5 @@
 import React from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { jwtDecode } from "jwt-decode";
+import { NavLink, Outlet } from 'react-router-dom'
 
 
 const Sidebar = () => {
@@ -10,7 +9,6 @@ const Sidebar = () => {
 
     const menuItems = [
         { name: "Dashboard", link: "/trainer/dashboard" },
-        { name: "Clients", link: "/trainer/clients" },
         { name: "Online Students", link: "/trainer/client-management" },
         { name: "Todos", link: "/trainer/todos" },
         { name: "Courses", link: "/trainer/courses" },

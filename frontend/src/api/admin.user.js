@@ -67,3 +67,23 @@ export const rejectTrainer = async (trainerId) => {
 
 // Keep for backward compatibility
 export const getAllUsers = getAllTrainers;
+
+export const getAdminProfile = async () => {
+    try {
+        const { data } = await API.get("/admin/profile");
+        return data;
+    } catch (error) {
+        const message = error.response?.data?.message || "Failed to fetch admin profile";
+        throw new Error(message);
+    }
+};
+
+export const updateAdminProfile = async (payload) => {
+    try {
+        const { data } = await API.put("/admin/profile", payload);
+        return data;
+    } catch (error) {
+        const message = error.response?.data?.message || "Failed to update admin profile";
+        throw new Error(message);
+    }
+};

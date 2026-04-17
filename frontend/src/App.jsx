@@ -15,6 +15,8 @@ import Course from './pages/protected/trainer/courses/Courses';
 import CoursesList from './pages/protected/trainer/courses/CoursesList';
 import Client from './pages/protected/trainer/clients/Client';
 import ClientTrackPage from './pages/protected/trainer/clients/ClientTrackPage';
+import TrainerSettings from './pages/protected/trainer/settings/TrainerSettings';
+import TrainerProfile from './pages/protected/trainer/profile/TrainerProfile';
 import Chat from './pages/protected/user/Chat';
 import Page from './pages/protected/user/Page';
 import UserMessagePage from './pages/protected/user/messages/UserMessagePage';
@@ -26,8 +28,13 @@ import ProtectedRoute from './pages/protected/trainer/ProtectedRoute';
 import ProtectedAdminRoute from './pages/protected/admin/ProtectedAdminRoute';
 import AdminSidebar from './pages/protected/admin/AdminSideBar';
 import AdminProduct from './pages/protected/admin/products/AdminProduct';
+import AdminCourses from './pages/protected/admin/courses/AdminCourses';
+import AdminHome from './pages/protected/admin/AdminHome';
+import AdminOrders from './pages/protected/admin/orders/AdminOrders';
 import UserPage from './pages/protected/admin/users/UserPage';
 import IncomingCallHandler from './components/chat/IncomingCallHandler';
+import AdminProfile from './pages/protected/admin/profile/AdminProfile';
+import AdminSettings from './pages/protected/admin/settings/AdminSettings';
 
 // Client-Trainer System imports
 import ClientManagement from './pages/protected/trainer/clients/ClientManagement';
@@ -42,8 +49,18 @@ import MyTrainers from './pages/protected/user/trainers/MyTrainers';
 import TrainerTasks from './pages/protected/user/trainers/TrainerTasks';
 import MyCourses from './pages/protected/user/courses/MyCourses';
 import CoursePlayer from './pages/protected/user/courses/CoursePlayer';
+import UserSettings from './pages/protected/user/settings/UserSettings';
 import AdminClientTodos from './pages/protected/admin/clientTodos/AdminClientTodos';
+import ProductPaymentSuccess from './pages/public/product/ProductPaymentSuccess';
+import ProductPaymentFailure from './pages/public/product/ProductPaymentFailure';
 import EsewaSuccess from './pages/public/EsewaSuccess';
+import UserProduct from './pages/protected/user/products/UserProduct';
+import AIChatbot from './components/AIChatbot';
+import NotificationCenter from './components/NotificationCenter';
+import Logout from './pages/public/Logout';
+import Trainers from './pages/public/Trainers';
+import TrainerDetail from './pages/public/TrainerDetail';
+import AboutUs from './pages/public/AboutUs';
 
 function App() {
   const [count, setCount] = useState(0)
@@ -54,7 +71,7 @@ function App() {
         {/* Global incoming call handler */}
         <IncomingCallHandler />
         
-        <Routes>
+  <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/courses" element={<Courses />} />
           <Route path="/courses/:courseId" element={<CourseDetail />} />
@@ -63,8 +80,12 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/register-trainer" element={<RegisterTrainer />} />
           <Route path="/course/payment/success" element={<EsewaSuccess/>}/>
+          <Route path="/user/products/payment/success" element={<ProductPaymentSuccess />} />
+          <Route path="/user/products/payment/failure" element={<ProductPaymentFailure />} />
           <Route path="/login" element={<Login />} />
-          {/* <Route path="/about" element={<About />} /> */}
+          <Route path="/trainers" element={<Trainers/>}/>
+          <Route path="/trainers/:trainerId" element={<TrainerDetail />} />
+          <Route path="/about" element={<AboutUs />} />
 
           <Route path="/trainer" element={
             <ProtectedRoute allowedRole="trainer">
@@ -77,6 +98,8 @@ function App() {
             <Route path="clients" element={<Client />} />
             <Route path="messages" element={<TrainerMessagePage />} />
             <Route path="clients/:clientId/track" element={<ClientTrackPage />} />
+            <Route path="settings" element={<TrainerSettings />} />
+            <Route path="profile" element={<TrainerProfile />} />
             
             {/* Client-Trainer Management */}
             <Route path="client-management" element={<ClientManagement />} />
@@ -91,14 +114,17 @@ function App() {
             <Route path="messages" element={<UserMessagePage />} />
             <Route path="dashboard" element={<UserDashboard />} />
             <Route path="my-courses" element={<MyCourses />} />
+            <Route path="my-products" element={<UserProduct />} />
             <Route path="trainers" element={<MyTrainers />} />
             <Route path="trainers/:trainerId/tasks" element={<TrainerTasks />} />
             <Route path="todos" element={<UserTodoList />} />
             <Route path="todos/:assignmentId" element={<UserTodoDetail />} />
+            <Route path="settings" element={<UserSettings />} />
           </Route>
 
           {/* Course Player - Full screen layout (outside Page layout) */}
           <Route path="/user/my-courses/:courseId" element={<CoursePlayer />} />
+          <Route path="/logout" element={<Logout />} />
 
             {/* admin route protected wala */}
           <Route path="/admin" element={
@@ -106,13 +132,19 @@ function App() {
                 <AdminSidebar />
               </ProtectedAdminRoute>
             }>
-              <Route path="dashboard" element={<h1>This is admin dashboard</h1>} />
+              <Route path="dashboard" element={<AdminHome />} />
+              <Route path="courses" element={<AdminCourses />} />
               <Route path="products" element={<AdminProduct/>}/>
+              <Route path="orders" element={<AdminOrders />} />
               <Route path="users" element={<UserPage/>}/>
               <Route path="client-todos" element={<AdminClientTodos/>}/>
+              <Route path="settings" element={<AdminSettings />} />
+              <Route path="profile" element={<AdminProfile />} />
             </Route>
 
         </Routes>
+        <NotificationCenter />
+        <AIChatbot />
       </Router>
     </>
   )

@@ -22,7 +22,7 @@ import {
 } from "../../../../services/socket.service";
 import { getConversations, getMessages } from "../../../../api/chat.api";
 import VideoCallModal from "../../../../components/chat/VideoCallModal";
-import Header from "../../../../components/Header";
+
 
 export default function UserMessagePage() {
     const dispatch = useDispatch();
@@ -150,7 +150,6 @@ export default function UserMessagePage() {
     return (
         <div className="flex flex-col h-screen bg-gray-100">
             {/* Header */}
-            <Header />
 
             {/* Main Content */}
             <div className="flex flex-1 overflow-hidden">

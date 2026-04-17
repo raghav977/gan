@@ -101,3 +101,23 @@ export const updateLectureProgress = async (courseId, lectureId, isCompleted = t
         throw new Error(message);
     }
 };
+
+
+
+
+export const verifyCoursePayment = async (transaction_uuid) => {
+  try {
+
+    const response = await axios.put(
+      `${BACKEND_URL}/enroll/verify-payment`,
+      { transaction_uuid }, // this is the request body
+      getAuthHeader()       
+    );
+
+    console.log("This is response data", response.data);
+    return response.data;
+  } catch (err) {
+    const message = err.response?.data?.message || "Failed to verify course payment";
+    throw new Error(message);
+  }
+};

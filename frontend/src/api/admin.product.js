@@ -84,3 +84,21 @@ export const deleteProduct = async (productId) => {
         throw new Error(message);
     }
 };
+
+export const getOrderedProducts = async ({ page = 1, limit = 10, status = "PURCHASED", search = "" } = {}) => {
+    try {
+        const params = { page, limit };
+        if (status) params.status = status;
+        if (search) params.search = search;
+
+        const response = await axios.get(`${BACKEND_URL}/orders`, {
+            params,
+            headers: getAuthHeader()
+        });
+        return response.data;
+    } catch (err) {
+        const message = err.response?.data?.message || "Failed to fetch ordered products";
+        console.error("Get ordered products error:", message);
+        throw new Error(message);
+    }
+};

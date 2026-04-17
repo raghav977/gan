@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { getPublicProductDetail } from '../../api/public.product';
 import Header from '../../components/Header';
+import { addProductToCart, purchaseCartItems } from '../../api/userProduct';
+import { selectIsAuthenticated } from '../../store/slices/authSlice';
 
 const ProductDetail = () => {
     const { productId } = useParams();
@@ -10,6 +13,10 @@ const ProductDetail = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [quantity, setQuantity] = useState(1);
+    const isAuthenticated = useSelector(selectIsAuthenticated);
+    const [adding, setAdding] = useState(false);
+    const [checkingOut, setCheckingOut] = useState(false);
+    const [feedback, setFeedback] = useState("");
 
     useEffect(() => {
         fetchProduct();
@@ -36,6 +43,91 @@ const ProductDetail = () => {
 
     const handleQuantityChange = (delta) => {
         setQuantity(prev => Math.max(1, Math.min(product?.productStock || 10, prev + delta)));
+    };
+
+    const ensureAuthenticated = () => {
+        if (!isAuthenticated) {
+            navigate('/login');
+            return false;
+        }
+        return true;
+    };
+
+    const enqueueProduct = async () => {
+        if (!product) return { success: false };
+        try {
+            await addProductToCart(product.id, quantity);
+            return { success: true, alreadyInCart: false };
+        } catch (err) {
+            if (err.message?.toLowerCase().includes('already')) {
+                return { success: true, alreadyInCart: true };
+            }
+            throw err;
+        }
+    };
+
+    const createEsewaForm = (fields) => {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'https://rc-epay.esewa.com.np/api/epay/main/v2/form';
+        Object.entries(fields).forEach(([key, value]) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = value;
+            form.appendChild(input);
+        });
+        document.body.appendChild(form);
+        form.submit();
+    };
+
+    const handleAddToCart = async () => {
+        if (!ensureAuthenticated()) return;
+        setFeedback("");
+        setAdding(true);
+        try {
+            const result = await enqueueProduct();
+            setFeedback(result.alreadyInCart ? "Product is already in your cart" : "Product added to cart");
+        } catch (err) {
+            setFeedback(err.message || "Unable to add product to cart");
+        } finally {
+            setAdding(false);
+        }
+    };
+
+    const handleBuyNow = async () => {
+        if (!ensureAuthenticated()) return;
+        setFeedback("");
+        setCheckingOut(true);
+        try {
+            const result = await enqueueProduct();
+            if (!result.success) {
+                throw new Error("Unable to prepare cart");
+            }
+
+            const paymentPayload = await purchaseCartItems();
+            if (!paymentPayload) {
+                throw new Error("Unable to initiate payment");
+            }
+
+            createEsewaForm({
+                amount: paymentPayload.amount,
+                tax_amount: paymentPayload.tax_amount,
+                total_amount: paymentPayload.total_amount,
+                transaction_uuid: paymentPayload.transaction_uuid,
+                product_code: paymentPayload.product_code,
+                product_service_charge: paymentPayload.product_service_charge || 0,
+                product_delivery_charge: paymentPayload.product_delivery_charge || 0,
+                success_url: paymentPayload.success_url,
+                failure_url: paymentPayload.failure_url,
+                signature: paymentPayload.signature,
+                signed_field_names: paymentPayload.signed_field_names
+            });
+        } catch (err) {
+            setFeedback(err.message || "Unable to start checkout");
+        } finally {
+            setCheckingOut(false);
+        }
     };
 
     if (loading) {
@@ -109,10 +201,10 @@ const ProductDetail = () => {
                             <img
                                 src={getImageUrl(product.productImage)}
                                 alt={product.productName}
-                                className="w-full h-96 md:h-[500px] object-cover"
+                                className="w-full h-96 md:h-125 object-cover"
                             />
                         ) : (
-                            <div className="w-full h-96 md:h-[500px] bg-gray-100 flex items-center justify-center text-gray-400">
+                            <div className="w-full h-96 md:h-125 bg-gray-100 flex items-center justify-center text-gray-400">
                                 <svg className="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
@@ -178,32 +270,39 @@ const ProductDetail = () => {
                         )}
 
                         {/* Action Buttons */}
-                        <div className="flex gap-4">
-                            <button
-                                disabled={product.productStock === 0}
-                                className={`flex-1 py-3 rounded-lg font-semibold cursor-pointer transition-colors ${
-                                    product.productStock > 0
-                                        ? 'bg-white-600 text-black hover:bg-yellow-600 border duration-75'
-                                        : 'bg-white-300 text-black-500 cursor-not-allowed'
-                                }`}
-                            >
-                                Buy Now
-                            </button>
-                            <button
-                                disabled={product.productStock === 0}
-                                className={`flex-1 py-3 rounded-lg font-semibold transition-colors ${
-                                    product.productStock > 0
-                                        ? 'bg-yellow-600 text-white hover:bg-yellow-700'
-                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                }`}
-                            >
-                                {product.productStock > 0 ? 'Add to Cart' : 'Out of Stock'}
-                            </button>
-                            <button className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                </svg>
-                            </button>
+                        <div className="flex flex-col gap-4">
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={handleBuyNow}
+                                    disabled={product.productStock === 0 || checkingOut}
+                                    className={`flex-1 py-3 rounded-lg font-semibold transition-colors ${
+                                        product.productStock > 0
+                                            ? 'bg-yellow-500 text-white hover:bg-yellow-600'
+                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    }`}
+                                >
+                                    {checkingOut ? 'Processing...' : 'Buy Now'}
+                                </button>
+                                <button
+                                    onClick={handleAddToCart}
+                                    disabled={product.productStock === 0 || adding}
+                                    className={`flex-1 py-3 rounded-lg font-semibold transition-colors ${
+                                        product.productStock > 0
+                                            ? 'bg-white border border-yellow-500 text-yellow-600 hover:bg-yellow-50'
+                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    }`}
+                                >
+                                    {product.productStock > 0 ? (adding ? 'Adding...' : 'Add to Cart') : 'Out of Stock'}
+                                </button>
+                                <button className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                    </svg>
+                                </button>
+                            </div>
+                            {feedback && (
+                                <p className="text-sm text-gray-600">{feedback}</p>
+                            )}
                         </div>
 
                         {/* Product Meta */}

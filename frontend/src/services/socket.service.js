@@ -11,6 +11,7 @@ import {
     setCallEnded,
     incrementUnreadCount
 } from '../store/slices/chatSlice';
+import { addNotification } from '../store/slices/notificationsSlice';
 
 const SOCKET_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001';
 
@@ -103,6 +104,10 @@ export const connectSocket = (token) => {
 
     socket.on('user-offline', ({ userId }) => {
         console.log('User is offline:', userId);
+    });
+
+    socket.on('notification:new', (notification) => {
+        store.dispatch(addNotification(notification));
     });
 
     return socket;

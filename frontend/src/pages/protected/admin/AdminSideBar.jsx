@@ -1,5 +1,5 @@
 import React from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet } from 'react-router-dom'
 
 
 const AdminSidebar = () => {
@@ -11,10 +11,9 @@ const AdminSidebar = () => {
         { name: "Dashboard", link: "/admin/dashboard" },
         { name: "Users", link: "/admin/users" },
         { name: "Courses", link: "/admin/courses" },
-        { name: "Client Todos", link: "/admin/client-todos" },
-        { name: "Settings", link: "/admin/settings" },
-        { name: "Profile", link: "/admin/profile" },
+        { name: "Clients todos", link: "/admin/client-todos" },
         { name: "Products", link: "/admin/products" },
+        { name: "Orders", link: "/admin/orders" },
         { name: "Logout", link: "/logout" }
     ]
 

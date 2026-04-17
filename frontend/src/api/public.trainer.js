@@ -21,3 +21,14 @@ export const getAllApprovedTrainer = async ({ page = 1, limit = 10, search = ""}
     }
 };
 
+export const getTrainerDetail = async (trainerId) => {
+    try {
+        const { data } = await API.get(`/public/trainer/detail/${trainerId}`);
+        return data;
+    } catch (error) {
+        const message =
+            error.response?.data?.message || "Failed to fetch trainer details";
+        throw new Error(message);
+    }
+};
+
